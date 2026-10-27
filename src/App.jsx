@@ -1,4 +1,4 @@
-import React, {useState,useEffect,useMemo} from 'react';
+import React, {useState,useEffect,useMemo,useLayoutEffect} from 'react';
 import {
  LayoutDashboard, UsersRound, FileText, HardHat, CalendarDays, ListTodo,
  Menu, X, Plus, Search, Bell, ChevronDown, ChevronRight, ArrowUpRight,
@@ -79,7 +79,24 @@ function App(){
  useEffect(()=>{if(notice){const t=setTimeout(()=>setNotice(''),3200);return ()=>clearTimeout(t)}},[notice]);
  const show=(message)=>setNotice(message);
  const open=(type,item=null)=>setDrawer({type,item});
- const navigate=(v)=>{setView(v);setSearch('');setMobileMenu(false);window.scrollTo({top:0,behavior:'smooth'})};
+ // Reset immediately and after React changes pages. Smooth scrolling used to
+ // keep the previous page's scroll offset during mobile tab transitions.
+ const resetPageScroll=()=>{
+   window.scrollTo(0,0);
+   document.documentElement.scrollTop=0;
+   document.body.scrollTop=0;
+   const content=document.querySelector('.page-content');
+   if(content)content.scrollTop=0;
+   const main=document.querySelector('.main-area');
+   if(main)main.scrollTop=0;
+ };
+ useLayoutEffect(()=>{resetPageScroll();},[view]);
+ const navigate=(v)=>{
+   setSearch('');
+   setMobileMenu(false);
+   resetPageScroll();
+   setView(v);
+ };
  const metrics=useMemo(()=>{
  const liveLeads=db.leads.filter(l=>!['Won','Lost'].includes(l.stage));
  const pending=db.estimates.filter(e=>['Draft','Sent'].includes(e.status));
